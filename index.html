@@ -1,0 +1,1563 @@
+````html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Notes App</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+--bg:#fff;
+--panel:#f5f5f7;
+--panel2:#fafafa;
+--text:#202124;
+--muted:#777;
+--border:#ddd;
+--hover:#e9e9ed;
+--accent:#111;
+--accentText:#fff;
+--danger:#d93025;
+}
+
+body.dark{
+--bg:#181818;
+--panel:#111;
+--panel2:#1f1f1f;
+--text:#eee;
+--muted:#999;
+--border:#333;
+--hover:#292929;
+--accent:#eee;
+--accentText:#111;
+}
+
+body{
+font-family:Arial,sans-serif;
+background:var(--bg);
+color:var(--text);
+height:100vh;
+overflow:hidden;
+}
+
+button,input,textarea,select{
+font-family:inherit;
+}
+
+button{
+cursor:pointer;
+}
+
+.app{
+display:flex;
+height:100vh;
+}
+
+
+/* SIDEBAR */
+
+.sidebar{
+width:285px;
+background:var(--panel);
+border-right:1px solid var(--border);
+padding:16px;
+display:flex;
+flex-direction:column;
+}
+
+.logo{
+font-size:22px;
+font-weight:bold;
+margin-bottom:15px;
+}
+
+.new{
+width:100%;
+padding:12px;
+border:0;
+border-radius:9px;
+background:var(--accent);
+color:var(--accentText);
+font-size:15px;
+margin-bottom:10px;
+}
+
+.search{
+width:100%;
+padding:10px;
+border:1px solid var(--border);
+border-radius:8px;
+background:var(--bg);
+color:var(--text);
+outline:none;
+margin-bottom:12px;
+}
+
+.sidebarButton{
+width:100%;
+padding:9px;
+border:0;
+border-radius:8px;
+background:transparent;
+color:var(--text);
+text-align:left;
+margin-bottom:3px;
+}
+
+.sidebarButton:hover,
+.sidebarButton.active{
+background:var(--hover);
+}
+
+.section{
+font-size:11px;
+color:var(--muted);
+text-transform:uppercase;
+margin:16px 5px 6px;
+}
+
+.folder{
+display:flex;
+align-items:center;
+gap:7px;
+}
+
+.folderDelete{
+margin-left:auto;
+border:0;
+background:transparent;
+color:var(--muted);
+display:none;
+}
+
+.folder:hover .folderDelete{
+display:block;
+}
+
+.notesList{
+overflow:auto;
+margin-top:10px;
+flex:1;
+}
+
+.noteItem{
+padding:11px;
+border-radius:9px;
+margin-bottom:5px;
+cursor:pointer;
+border-left:5px solid transparent;
+}
+
+.noteItem:hover,
+.noteItem.active{
+background:var(--hover);
+}
+
+.noteItem.pinned .pin{
+display:inline;
+}
+
+.noteTitle{
+font-weight:bold;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+}
+
+.notePreview{
+font-size:12px;
+color:var(--muted);
+margin-top:4px;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+}
+
+.pin{
+display:none;
+float:right;
+}
+
+
+/* MAIN */
+
+.main{
+flex:1;
+display:flex;
+flex-direction:column;
+min-width:0;
+}
+
+.toolbar{
+height:68px;
+border-bottom:1px solid var(--border);
+display:flex;
+align-items:center;
+gap:8px;
+padding:10px 18px;
+}
+
+.title{
+flex:1;
+font-size:23px;
+font-weight:bold;
+border:0;
+outline:0;
+background:transparent;
+color:var(--text);
+min-width:100px;
+}
+
+.tool{
+border:1px solid var(--border);
+background:transparent;
+color:var(--text);
+border-radius:8px;
+padding:8px 11px;
+}
+
+.tool:hover{
+background:var(--hover);
+}
+
+.colorPicker{
+width:34px;
+height:34px;
+padding:3px;
+border:1px solid var(--border);
+background:transparent;
+border-radius:8px;
+}
+
+.editorArea{
+flex:1;
+display:flex;
+min-height:0;
+}
+
+.editor{
+flex:1;
+resize:none;
+border:0;
+outline:0;
+background:var(--bg);
+color:var(--text);
+padding:28px;
+font-size:17px;
+line-height:1.7;
+}
+
+.preview{
+display:none;
+flex:1;
+overflow:auto;
+padding:28px;
+line-height:1.7;
+}
+
+.preview.show{
+display:block;
+}
+
+.preview h1{font-size:30px;margin-bottom:15px}
+.preview h2{font-size:24px;margin:18px 0 8px}
+.preview h3{font-size:20px;margin:15px 0 7px}
+.preview p{margin-bottom:12px}
+.preview code{
+background:var(--hover);
+padding:2px 5px;
+border-radius:4px;
+}
+.preview pre{
+background:var(--panel);
+padding:15px;
+border-radius:8px;
+overflow:auto;
+margin:12px 0;
+}
+.preview blockquote{
+border-left:4px solid var(--muted);
+padding-left:12px;
+color:var(--muted);
+}
+
+.status{
+height:34px;
+border-top:1px solid var(--border);
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:0 18px;
+color:var(--muted);
+font-size:12px;
+}
+
+
+/* TRASH */
+
+.trashMode .noteItem{
+opacity:.9;
+}
+
+
+/* MODAL */
+
+.modal{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.45);
+display:none;
+align-items:center;
+justify-content:center;
+z-index:10;
+}
+
+.modal.show{
+display:flex;
+}
+
+.modalBox{
+width:360px;
+max-width:90%;
+background:var(--bg);
+border:1px solid var(--border);
+border-radius:14px;
+padding:20px;
+box-shadow:0 20px 50px rgba(0,0,0,.2);
+}
+
+.modalBox h2{
+margin-bottom:15px;
+}
+
+.modalInput{
+width:100%;
+padding:11px;
+border:1px solid var(--border);
+border-radius:8px;
+background:var(--bg);
+color:var(--text);
+outline:none;
+margin-bottom:12px;
+}
+
+.modalActions{
+display:flex;
+gap:8px;
+justify-content:flex-end;
+}
+
+.modalActions button{
+padding:9px 13px;
+border-radius:8px;
+border:1px solid var(--border);
+background:transparent;
+color:var(--text);
+}
+
+.modalActions .primary{
+background:var(--accent);
+color:var(--accentText);
+}
+
+
+/* MOBILE */
+
+@media(max-width:750px){
+
+.sidebar{
+width:210px;
+padding:10px;
+}
+
+.title{
+font-size:18px;
+}
+
+.toolbar{
+padding:8px;
+}
+
+.tool{
+padding:7px;
+}
+
+.editor,
+.preview{
+padding:18px;
+}
+
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<!-- SIDEBAR -->
+
+<aside class="sidebar">
+
+<div class="logo">📝 Notes</div>
+
+<button class="new" onclick="createNote()">+ New Note</button>
+
+<input
+id="search"
+class="search"
+placeholder="🔎 Search..."
+oninput="renderNotes()"
+>
+
+<button
+class="sidebarButton active"
+id="allButton"
+onclick="setView('all')">
+🗒️ All Notes
+</button>
+
+<button
+class="sidebarButton"
+id="pinButton"
+onclick="setView('pinned')">
+📌 Pinned
+</button>
+
+<div class="section">Folders</div>
+
+<div id="folders"></div>
+
+<button
+class="sidebarButton"
+onclick="openFolderModal()">
+＋ New Folder
+</button>
+
+<div class="section">Other</div>
+
+<button
+class="sidebarButton"
+onclick="setView('trash')">
+🗑️ Trash
+</button>
+
+<button
+class="sidebarButton"
+onclick="exportNotes()">
+📤 Export
+</button>
+
+<button
+class="sidebarButton"
+onclick="document.getElementById('importFile').click()">
+📥 Import
+</button>
+
+<input
+type="file"
+id="importFile"
+accept=".json"
+style="display:none"
+onchange="importNotes(event)"
+>
+
+<div class="notesList" id="notesList"></div>
+
+</aside>
+
+
+<!-- MAIN -->
+
+<main class="main">
+
+<div class="toolbar">
+
+<input
+id="title"
+class="title"
+placeholder="Note title..."
+oninput="autoSave()"
+>
+
+<button
+class="tool"
+id="pinBtn"
+onclick="togglePin()">
+📌
+</button>
+
+<input
+type="color"
+id="colorPicker"
+class="colorPicker"
+value="#ffffff"
+oninput="changeColor()"
+>
+
+<button
+class="tool"
+onclick="toggleMarkdown()">
+MD
+</button>
+
+<button
+class="tool"
+onclick="toggleTheme()">
+🌙
+</button>
+
+<button
+class="tool"
+onclick="deleteNote()">
+🗑️
+</button>
+
+</div>
+
+
+<div class="editorArea">
+
+<textarea
+id="editor"
+class="editor"
+placeholder="Start writing...
+
+Markdown examples:
+
+# Heading
+**bold**
+*italic*
+- list
+> quote
+`code`
+"
+oninput="autoSave();updateStats()">
+</textarea>
+
+<div
+id="preview"
+class="preview">
+</div>
+
+</div>
+
+
+<div class="status">
+
+<span id="stats">
+0 words • 0 characters
+</span>
+
+<span id="saveStatus">
+Ready
+</span>
+
+</div>
+
+</main>
+
+</div>
+
+
+<!-- FOLDER MODAL -->
+
+<div
+id="folderModal"
+class="modal">
+
+<div class="modalBox">
+
+<h2>New Folder</h2>
+
+<input
+id="folderName"
+class="modalInput"
+placeholder="Folder name..."
+>
+
+<div class="modalActions">
+
+<button onclick="closeFolderModal()">
+Cancel
+</button>
+
+<button
+class="primary"
+onclick="createFolder()">
+Create
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   DATA
+========================================================= */
+
+let notes =
+JSON.parse(localStorage.getItem("advancedNotes")) || [];
+
+let folders =
+JSON.parse(localStorage.getItem("noteFolders")) || [
+"Personal",
+"Work",
+"Study"
+];
+
+let currentID = null;
+
+let currentView = "all";
+
+let currentFolder = null;
+
+let saveTimer;
+
+
+/* =========================================================
+   STORAGE
+========================================================= */
+
+function saveData(){
+
+localStorage.setItem(
+"advancedNotes",
+JSON.stringify(notes)
+);
+
+localStorage.setItem(
+"noteFolders",
+JSON.stringify(folders)
+);
+
+}
+
+
+/* =========================================================
+   CREATE NOTE
+========================================================= */
+
+function createNote(){
+
+const note={
+
+id:Date.now(),
+
+title:"New Note",
+
+content:"",
+
+folder:currentFolder || "Personal",
+
+color:"#ffffff",
+
+pinned:false,
+
+trash:false,
+
+created:new Date().toLocaleString(),
+
+updated:new Date().toLocaleString()
+
+};
+
+notes.unshift(note);
+
+saveData();
+
+currentID=note.id;
+
+currentView="all";
+
+openNote(note.id);
+
+renderFolders();
+
+renderNotes();
+
+}
+
+
+/* =========================================================
+   OPEN NOTE
+========================================================= */
+
+function openNote(id){
+
+const note=notes.find(n=>n.id===id);
+
+if(!note)return;
+
+currentID=id;
+
+document.getElementById("title").value=note.title;
+
+document.getElementById("editor").value=note.content;
+
+document.getElementById("colorPicker").value=
+isValidColor(note.color)?note.color:"#ffffff";
+
+document.getElementById("pinBtn").textContent=
+note.pinned?"📌 Pinned":"📌";
+
+updateStats();
+
+document.getElementById("saveStatus").textContent="Saved";
+
+renderNotes();
+
+}
+
+
+/* =========================================================
+   VALID COLOR
+========================================================= */
+
+function isValidColor(color){
+
+return /^#[0-9A-F]{6}$/i.test(color);
+
+}
+
+
+/* =========================================================
+   SAVE
+========================================================= */
+
+function saveNote(){
+
+if(currentID===null)return;
+
+const note=notes.find(n=>n.id===currentID);
+
+if(!note)return;
+
+note.title=
+document.getElementById("title").value.trim()
+||"Untitled";
+
+note.content=
+document.getElementById("editor").value;
+
+note.updated=new Date().toLocaleString();
+
+saveData();
+
+renderNotes();
+
+document.getElementById("saveStatus").textContent="Saved";
+
+}
+
+
+/* =========================================================
+   AUTO SAVE
+========================================================= */
+
+function autoSave(){
+
+document.getElementById("saveStatus").textContent="Saving...";
+
+clearTimeout(saveTimer);
+
+saveTimer=setTimeout(saveNote,500);
+
+}
+
+
+/* =========================================================
+   PIN
+========================================================= */
+
+function togglePin(){
+
+if(currentID===null)return;
+
+const note=notes.find(n=>n.id===currentID);
+
+if(!note)return;
+
+note.pinned=!note.pinned;
+
+saveData();
+
+document.getElementById("pinBtn").textContent=
+note.pinned?"📌 Pinned":"📌";
+
+renderNotes();
+
+}
+
+
+/* =========================================================
+   COLOR
+========================================================= */
+
+function changeColor(){
+
+if(currentID===null)return;
+
+const note=notes.find(n=>n.id===currentID);
+
+if(!note)return;
+
+note.color=
+document.getElementById("colorPicker").value;
+
+saveData();
+
+renderNotes();
+
+}
+
+
+/* =========================================================
+   DELETE / TRASH
+========================================================= */
+
+function deleteNote(){
+
+if(currentID===null)return;
+
+const note=notes.find(n=>n.id===currentID);
+
+if(!note)return;
+
+if(note.trash){
+
+if(confirm("Delete this note permanently?")){
+
+notes=notes.filter(n=>n.id!==currentID);
+
+}
+
+}else{
+
+if(confirm("Move this note to Trash?")){
+
+note.trash=true;
+
+}
+
+}
+
+saveData();
+
+currentID=null;
+
+renderNotes();
+
+clearEditor();
+
+}
+
+
+/* =========================================================
+   RESTORE
+========================================================= */
+
+function restoreNote(id){
+
+const note=notes.find(n=>n.id===id);
+
+if(!note)return;
+
+note.trash=false;
+
+saveData();
+
+renderNotes();
+
+}
+
+
+/* =========================================================
+   EMPTY EDITOR
+========================================================= */
+
+function clearEditor(){
+
+document.getElementById("title").value="";
+
+document.getElementById("editor").value="";
+
+document.getElementById("stats").textContent=
+"0 words • 0 characters";
+
+document.getElementById("saveStatus").textContent=
+"No note selected";
+
+}
+
+
+/* =========================================================
+   VIEWS
+========================================================= */
+
+function setView(view){
+
+currentView=view;
+
+currentFolder=null;
+
+document.querySelectorAll(".sidebarButton")
+.forEach(b=>b.classList.remove("active"));
+
+if(view==="all"){
+
+document.getElementById("allButton")
+.classList.add("active");
+
+}
+
+if(view==="pinned"){
+
+document.getElementById("pinButton")
+.classList.add("active");
+
+}
+
+renderNotes();
+
+}
+
+
+function setFolder(folder){
+
+currentView="folder";
+
+currentFolder=folder;
+
+renderNotes();
+
+}
+
+
+/* =========================================================
+   RENDER FOLDERS
+========================================================= */
+
+function renderFolders(){
+
+const container=
+document.getElementById("folders");
+
+container.innerHTML="";
+
+folders.forEach(folder=>{
+
+const row=document.createElement("div");
+
+row.className="folder";
+
+const button=document.createElement("button");
+
+button.className="sidebarButton";
+
+button.textContent="📁 "+folder;
+
+button.onclick=()=>setFolder(folder);
+
+const del=document.createElement("button");
+
+del.className="folderDelete";
+
+del.textContent="×";
+
+del.title="Delete folder";
+
+del.onclick=(e)=>{
+
+e.stopPropagation();
+
+deleteFolder(folder);
+
+};
+
+row.appendChild(button);
+
+row.appendChild(del);
+
+container.appendChild(row);
+
+});
+
+}
+
+
+/* =========================================================
+   CREATE FOLDER
+========================================================= */
+
+function openFolderModal(){
+
+document.getElementById("folderModal")
+.classList.add("show");
+
+document.getElementById("folderName").focus();
+
+}
+
+
+function closeFolderModal(){
+
+document.getElementById("folderModal")
+.classList.remove("show");
+
+}
+
+
+function createFolder(){
+
+const input=
+document.getElementById("folderName");
+
+const name=input.value.trim();
+
+if(!name)return;
+
+if(folders.includes(name)){
+
+alert("That folder already exists.");
+
+return;
+
+}
+
+folders.push(name);
+
+saveData();
+
+input.value="";
+
+closeFolderModal();
+
+renderFolders();
+
+}
+
+
+/* =========================================================
+   DELETE FOLDER
+========================================================= */
+
+function deleteFolder(folder){
+
+if(folders.length<=1){
+
+alert("You need at least one folder.");
+
+return;
+
+}
+
+if(!confirm("Delete folder '"+folder+"'?"))return;
+
+const replacement=
+folders.find(f=>f!==folder);
+
+notes.forEach(note=>{
+
+if(note.folder===folder){
+
+note.folder=replacement;
+
+}
+
+});
+
+folders=
+folders.filter(f=>f!==folder);
+
+saveData();
+
+renderFolders();
+
+renderNotes();
+
+}
+
+
+/* =========================================================
+   RENDER NOTES
+========================================================= */
+
+function renderNotes(){
+
+const list=
+document.getElementById("notesList");
+
+const search=
+document.getElementById("search")
+.value.toLowerCase();
+
+list.innerHTML="";
+
+
+let filtered=notes.filter(note=>{
+
+if(currentView==="trash"){
+
+return note.trash;
+
+}
+
+if(note.trash)return false;
+
+if(currentView==="pinned"){
+
+if(!note.pinned)return false;
+
+}
+
+if(currentView==="folder"){
+
+if(note.folder!==currentFolder)return false;
+
+}
+
+return true;
+
+});
+
+
+filtered=filtered.filter(note=>
+
+note.title.toLowerCase().includes(search)
+||
+note.content.toLowerCase().includes(search)
+
+);
+
+
+/* Pinned first */
+
+filtered.sort((a,b)=>
+Number(b.pinned)-Number(a.pinned)
+);
+
+
+filtered.forEach(note=>{
+
+const item=document.createElement("div");
+
+item.className="noteItem";
+
+if(note.id===currentID)
+item.classList.add("active");
+
+if(note.pinned)
+item.classList.add("pinned");
+
+item.style.borderLeftColor=
+note.color || "transparent";
+
+
+const pin=document.createElement("span");
+
+pin.className="pin";
+
+pin.textContent="📌";
+
+
+const title=document.createElement("div");
+
+title.className="noteTitle";
+
+title.textContent=
+note.title || "Untitled";
+
+
+const preview=document.createElement("div");
+
+preview.className="notePreview";
+
+preview.textContent=
+note.content || "Empty note";
+
+
+item.appendChild(pin);
+
+item.appendChild(title);
+
+item.appendChild(preview);
+
+
+if(currentView==="trash"){
+
+item.onclick=()=>{
+
+if(confirm("Restore this note?")){
+
+restoreNote(note.id);
+
+}
+
+};
+
+}else{
+
+item.onclick=()=>openNote(note.id);
+
+}
+
+
+list.appendChild(item);
+
+});
+
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+document.getElementById("search")
+.addEventListener("input",renderNotes);
+
+
+/* =========================================================
+   MARKDOWN
+========================================================= */
+
+function toggleMarkdown(){
+
+const preview=
+document.getElementById("preview");
+
+const editor=
+document.getElementById("editor");
+
+if(preview.classList.contains("show")){
+
+preview.classList.remove("show");
+
+editor.style.display="block";
+
+}else{
+
+preview.innerHTML=
+markdownToHTML(editor.value);
+
+preview.classList.add("show");
+
+editor.style.display="none";
+
+}
+
+}
+
+
+function escapeHTML(text){
+
+return text
+.replace(/&/g,"&amp;")
+.replace(/</g,"&lt;")
+.replace(/>/g,"&gt;");
+
+}
+
+
+function markdownToHTML(text){
+
+let html=escapeHTML(text);
+
+
+/* Code blocks */
+
+html=html.replace(
+/```([\s\S]*?)```/g,
+"<pre>$1</pre>"
+);
+
+
+/* Headings */
+
+html=html.replace(
+/^### (.*)$/gm,
+"<h3>$1</h3>"
+);
+
+html=html.replace(
+/^## (.*)$/gm,
+"<h2>$1</h2>"
+);
+
+html=html.replace(
+/^# (.*)$/gm,
+"<h1>$1</h1>"
+);
+
+
+/* Bold */
+
+html=html.replace(
+/\*\*(.*?)\*\*/g,
+"<strong>$1</strong>"
+);
+
+
+/* Italic */
+
+html=html.replace(
+/\*(.*?)\*/g,
+"<em>$1</em>"
+);
+
+
+/* Inline code */
+
+html=html.replace(
+/`([^`]+)`/g,
+"<code>$1</code>"
+);
+
+
+/* Quote */
+
+html=html.replace(
+/^&gt; (.*)$/gm,
+"<blockquote>$1</blockquote>"
+);
+
+
+/* Lists */
+
+html=html.replace(
+/^- (.*)$/gm,
+"• $1<br>"
+);
+
+
+/* Paragraph breaks */
+
+html=html.replace(
+/\n\n/g,
+"<p></p>"
+);
+
+
+/* New lines */
+
+html=html.replace(
+/\n/g,
+"<br>"
+);
+
+
+return html;
+
+}
+
+
+/* =========================================================
+   THEME
+========================================================= */
+
+function toggleTheme(){
+
+document.body.classList.toggle("dark");
+
+const dark=
+document.body.classList.contains("dark");
+
+localStorage.setItem(
+"notesDarkMode",
+dark
+);
+
+}
+
+
+/* =========================================================
+   STATS
+========================================================= */
+
+function updateStats(){
+
+const text=
+document.getElementById("editor").value;
+
+const words=text.trim()
+?text.trim().split(/\s+/).length
+:0;
+
+document.getElementById("stats").textContent=
+words+" words • "+text.length+" characters";
+
+}
+
+
+/* =========================================================
+   EXPORT
+========================================================= */
+
+function exportNotes(){
+
+const data={
+
+version:1,
+
+exported:new Date().toISOString(),
+
+folders:folders,
+
+notes:notes
+
+};
+
+const blob=new Blob(
+[JSON.stringify(data,null,2)],
+{type:"application/json"}
+);
+
+const url=
+URL.createObjectURL(blob);
+
+const a=
+document.createElement("a");
+
+a.href=url;
+
+a.download=
+"my-notes-backup.json";
+
+a.click();
+
+URL.revokeObjectURL(url);
+
+}
+
+
+/* =========================================================
+   IMPORT
+========================================================= */
+
+function importNotes(event){
+
+const file=
+event.target.files[0];
+
+if(!file)return;
+
+const reader=
+new FileReader();
+
+reader.onload=function(){
+
+try{
+
+const data=
+JSON.parse(reader.result);
+
+if(!Array.isArray(data.notes)){
+
+throw new Error("Invalid backup file");
+
+}
+
+
+/* Add imported notes */
+
+data.notes.forEach(imported=>{
+
+const newNote={
+
+...imported,
+
+id:Date.now()+Math.random(),
+
+trash:!!imported.trash
+
+};
+
+notes.push(newNote);
+
+});
+
+
+/* Add folders */
+
+if(Array.isArray(data.folders)){
+
+data.folders.forEach(folder=>{
+
+if(!folders.includes(folder)){
+
+folders.push(folder);
+
+}
+
+});
+
+}
+
+saveData();
+
+renderFolders();
+
+renderNotes();
+
+alert("Notes imported successfully.");
+
+}catch(error){
+
+alert("Could not import this file.");
+
+}
+
+};
+
+reader.readAsText(file);
+
+event.target.value="";
+
+}
+
+
+/* =========================================================
+   LOAD
+========================================================= */
+
+if(
+localStorage.getItem("notesDarkMode")==="true"
+){
+
+document.body.classList.add("dark");
+
+}
+
+
+renderFolders();
+
+
+if(notes.length>0){
+
+const first=notes.find(n=>!n.trash);
+
+if(first){
+
+openNote(first.id);
+
+}
+
+}else{
+
+createNote();
+
+}
+
+</script>
+
+</body>
+</html>
+````
